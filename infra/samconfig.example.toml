@@ -1,0 +1,11 @@
+version = 0.1
+
+[default.build.parameters]
+template_file = "infra/template.yaml"
+
+[default.deploy.parameters]
+stack_name = "benchreporter-dev"
+region = "us-east-1"
+confirm_changeset = true
+resolve_s3 = true
+parameter_overrides = "Environment=dev RssFeedUrl=https://www.rotowire.com/rss/news.php?sport=NFL"

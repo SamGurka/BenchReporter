@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Shared AWS infrastructure for BenchReporter.
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedPattern: '^[a-z0-9-]+$'
+    Description: Deployment environment name used for resource tags.
+  RssFeedUrl:
+    Type: String
+    Default: https://www.rotowire.com/rss/news.php?sport=NFL
+    Description: Source-agnostic RSS or Atom URL used by the news-feed Lambda.
+
+Resources:
+  BotStateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Application
+          Value: BenchReporter
+        - Key: Environment
+          Value: !Ref Environment
+
+  RssFeedFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../
+      Handler: sleeper_discord_bot.handlers.news_feed.lambda_handler
+      Runtime: python3.12
+      Architectures:
+        - arm64
+      MemorySize: 256
+      Timeout: 30
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref BotStateTable
+          DRY_RUN: "false"
+          RSS_FEED_URL: !Ref RssFeedUrl
+          SSM_PARAMETER_PREFIX: !Sub "/benchreporter/${Environment}"
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BotStateTable
+        - Statement:
+            - Effect: Allow
+              Action: ssm:GetParameters
+              Resource: !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/benchreporter/${Environment}/*"
+
+  RssFeedScheduleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeRssFeedFunction
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt RssFeedFunction.Arn
+
+  RssFeedSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Description: Poll the configured fantasy news RSS feed every 15 minutes.
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      ScheduleExpression: rate(15 minutes)
+      State: ENABLED
+      Target:
+        Arn: !GetAtt RssFeedFunction.Arn
+        RoleArn: !GetAtt RssFeedScheduleRole.Arn
+
+  RssFeedSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref RssFeedFunction
+      Principal: scheduler.amazonaws.com
+      SourceArn: !GetAtt RssFeedSchedule.Arn
+
+Outputs:
+  BotStateTableName:
+    Description: DynamoDB table used for dedupe records, cache data, and historical snapshots.
+    Value: !Ref BotStateTable
+
+  BotStateTableArn:
+    Description: DynamoDB table ARN for Lambda IAM policies.
+    Value: !GetAtt BotStateTable.Arn
+
+  RssFeedFunctionName:
+    Description: Lambda function that posts the configured RSS/Atom feed to Discord.
+    Value: !Ref RssFeedFunction
