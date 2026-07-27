@@ -1,0 +1,93 @@
+[
+  {
+    "created": 1748180792863,
+    "creators": [
+      "user_09"
+    ],
+    "draft_id": "sample_draft_01",
+    "draft_order": {
+      "user_02": 6,
+      "user_03": 10,
+      "user_04": 11,
+      "user_05": 1,
+      "user_06": 3,
+      "user_07": 9,
+      "user_08": 5,
+      "user_09": 4,
+      "user_10": 8,
+      "user_11": 2,
+      "user_12": 12,
+      "user_13": 7
+    },
+    "last_message_id": null,
+    "last_message_time": 1749055927974,
+    "last_picked": 1749055915948,
+    "league_id": "sample_league",
+    "metadata": {},
+    "season": "2025",
+    "season_type": "regular",
+    "settings": {
+      "alpha_sort": 0,
+      "autopause_enabled": 0,
+      "autopause_end_time": 840,
+      "autopause_start_time": 240,
+      "autostart": 0,
+      "budget": 200,
+      "cpu_autopick": 1,
+      "enforce_position_limits": 1,
+      "nomination_timer": 14400,
+      "pick_timer": 28800,
+      "player_type": 0,
+      "reversal_round": 0,
+      "rounds": 5,
+      "slots_bn": 12,
+      "slots_flex": 3,
+      "slots_qb": 1,
+      "slots_rb": 2,
+      "slots_super_flex": 1,
+      "slots_te": 1,
+      "slots_wr": 2,
+      "teams": 12
+    },
+    "sport": "nfl",
+    "start_time": 1748662255761,
+    "status": "complete",
+    "type": "auction"
+  },
+  {
+    "created": 1747850825899,
+    "creators": [
+      "user_04",
+      "user_09"
+    ],
+    "draft_id": "sample_draft_02",
+    "draft_order": null,
+    "last_message_id": null,
+    "last_message_time": 1747850825899,
+    "last_picked": null,
+    "league_id": "sample_league",
+    "metadata": {},
+    "season": "2025",
+    "season_type": "regular",
+    "settings": {
+      "alpha_sort": 0,
+      "autostart": 0,
+      "cpu_autopick": 1,
+      "pick_timer": 120,
+      "reversal_round": 0,
+      "rounds": 24,
+      "slots_bn": 10,
+      "slots_flex": 3,
+      "slots_qb": 1,
+      "slots_rb": 2,
+      "slots_super_flex": 1,
+      "slots_te": 1,
+      "slots_wr": 2,
+      "teams": 12
+    },
+    "sport": "nfl",
+    "start_time": null,
+    "status": "complete",
+    "type": "snake"
+  }
+]

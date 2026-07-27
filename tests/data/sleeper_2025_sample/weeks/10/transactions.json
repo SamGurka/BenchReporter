@@ -1,0 +1,109 @@
+[
+  {
+    "adds": {
+      "12658": 1
+    },
+    "consenter_ids": [
+      1
+    ],
+    "created": 1762905399056,
+    "creator": "user_04",
+    "draft_picks": [],
+    "drops": {
+      "12775": 1
+    },
+    "leg": 10,
+    "metadata": {},
+    "roster_ids": [
+      1
+    ],
+    "settings": {
+      "seq": 2,
+      "waiver_bid": 0
+    },
+    "status": "failed",
+    "status_updated": 1762934761360,
+    "transaction_id": "sample_1294122676670988288",
+    "type": "waiver",
+    "waiver_budget": []
+  },
+  {
+    "adds": {
+      "8180": 1
+    },
+    "consenter_ids": [
+      1
+    ],
+    "created": 1762905365846,
+    "creator": "user_04",
+    "draft_picks": [],
+    "drops": {
+      "12775": 1
+    },
+    "leg": 10,
+    "metadata": {},
+    "roster_ids": [
+      1
+    ],
+    "settings": {
+      "seq": 1,
+      "waiver_bid": 0
+    },
+    "status": "failed",
+    "status_updated": 1762934761360,
+    "transaction_id": "sample_1294122537378148352",
+    "type": "waiver",
+    "waiver_budget": []
+  },
+  {
+    "adds": {
+      "5906": 1
+    },
+    "consenter_ids": [
+      1
+    ],
+    "created": 1762905308034,
+    "creator": "user_04",
+    "draft_picks": [],
+    "drops": {
+      "12775": 1
+    },
+    "leg": 10,
+    "metadata": {},
+    "roster_ids": [
+      1
+    ],
+    "settings": {
+      "seq": 0,
+      "waiver_bid": 2
+    },
+    "status": "complete",
+    "status_updated": 1762934761360,
+    "transaction_id": "sample_1294122294892834816",
+    "type": "waiver",
+    "waiver_budget": []
+  },
+  {
+    "adds": null,
+    "consenter_ids": [
+      6
+    ],
+    "created": 1762878617522,
+    "creator": "user_06",
+    "draft_picks": [],
+    "drops": {
+      "7607": 6
+    },
+    "leg": 10,
+    "metadata": {},
+    "roster_ids": [
+      6
+    ],
+    "settings": null,
+    "status": "complete",
+    "status_updated": 1762878617522,
+    "transaction_id": "sample_1294010346775773184",
+    "type": "free_agent",
+    "waiver_budget": []
+  }
+]
