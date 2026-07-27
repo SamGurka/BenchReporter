@@ -1,0 +1,14 @@
+{
+  "notes": [
+    "Manager identity fields replaced with fake values.",
+    "Stats files are trimmed to referenced players plus weekly top scorers.",
+    "Raw source data remains private under tests/private/."
+  ],
+  "source": "sanitized from private Sleeper 2025 capture",
+  "weeks": [
+    1,
+    3,
+    10,
+    16
+  ]
+}

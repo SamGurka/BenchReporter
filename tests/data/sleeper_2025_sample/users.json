@@ -1,0 +1,182 @@
+[
+  {
+    "avatar": null,
+    "display_name": "Manager 1",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 1"
+    },
+    "settings": {},
+    "user_id": "user_01"
+  },
+  {
+    "avatar": null,
+    "display_name": "Manager 2",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 2"
+    },
+    "settings": {},
+    "user_id": "user_02"
+  },
+  {
+    "avatar": null,
+    "display_name": "Manager 3",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 3"
+    },
+    "settings": {},
+    "user_id": "user_03"
+  },
+  {
+    "avatar": null,
+    "display_name": "Manager 4",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 4"
+    },
+    "settings": {},
+    "user_id": "user_04"
+  },
+  {
+    "avatar": null,
+    "display_name": "Manager 5",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 5"
+    },
+    "settings": {},
+    "user_id": "user_05"
+  },
+  {
+    "avatar": null,
+    "display_name": "Manager 6",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 6"
+    },
+    "settings": {},
+    "user_id": "user_06"
+  },
+  {
+    "avatar": null,
+    "display_name": "Manager 7",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 7"
+    },
+    "settings": {},
+    "user_id": "user_07"
+  },
+  {
+    "avatar": null,
+    "display_name": "Manager 8",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 8"
+    },
+    "settings": {},
+    "user_id": "user_08"
+  },
+  {
+    "avatar": null,
+    "display_name": "Manager 9",
+    "is_bot": false,
+    "is_owner": true,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 9"
+    },
+    "settings": {},
+    "user_id": "user_09"
+  },
+  {
+    "avatar": null,
+    "display_name": "Manager 10",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 10"
+    },
+    "settings": {},
+    "user_id": "user_10"
+  },
+  {
+    "avatar": null,
+    "display_name": "Manager 11",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 11"
+    },
+    "settings": {},
+    "user_id": "user_11"
+  },
+  {
+    "avatar": null,
+    "display_name": "Manager 12",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 12"
+    },
+    "settings": {},
+    "user_id": "user_12"
+  },
+  {
+    "avatar": null,
+    "display_name": "Manager 13",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 13"
+    },
+    "settings": {},
+    "user_id": "user_13"
+  },
+  {
+    "avatar": null,
+    "display_name": "Manager 14",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 14"
+    },
+    "settings": {},
+    "user_id": "user_14"
+  },
+  {
+    "avatar": null,
+    "display_name": "Manager 15",
+    "is_bot": false,
+    "is_owner": false,
+    "league_id": "sample_league",
+    "metadata": {
+      "team_name": "Team 15"
+    },
+    "settings": {},
+    "user_id": "user_15"
+  }
+]
