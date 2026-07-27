@@ -111,6 +111,11 @@ sam build
 sam deploy --guided
 ```
 
+## Legal
+
+- [Privacy Policy](./PRIVACY.md)
+- [Terms of Use](./TERMS.md)
+
 ## Roadmap
 
 ### V1
