@@ -19,6 +19,7 @@ class AppConfig:
     season: str | None = None
     sleeper_base_url: str = "https://api.sleeper.app/v1"
     sleeper_stats_base_url: str = "https://api.sleeper.com/stats/nfl"
+    rss_feed_url: str = ""
     dry_run: bool = True
     discord_bot_token: str = ""
     channel_ids: dict[str, str] = field(default_factory=dict)
@@ -31,6 +32,7 @@ class AppConfig:
             season=env.get("SEASON") or None,
             sleeper_base_url=env.get("SLEEPER_BASE_URL", cls.sleeper_base_url),
             sleeper_stats_base_url=env.get("SLEEPER_STATS_BASE_URL", cls.sleeper_stats_base_url),
+            rss_feed_url=env.get("RSS_FEED_URL", ""),
             dry_run=_bool_env(env.get("DRY_RUN"), default=True),
             discord_bot_token=env.get("DISCORD_BOT_TOKEN", ""),
             channel_ids={
