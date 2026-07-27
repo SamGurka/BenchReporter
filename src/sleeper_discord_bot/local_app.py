@@ -6,10 +6,12 @@ import argparse
 
 from sleeper_discord_bot.clients.sleeper import SleeperClient
 from sleeper_discord_bot.clients.storage import InMemoryStorage
+from sleeper_discord_bot.clients.rss import RssClient
 from sleeper_discord_bot.config import AppConfig
 from sleeper_discord_bot.delivery import ConsoleDelivery
 from sleeper_discord_bot.handlers.trade_watch import run_trade_watch
 from sleeper_discord_bot.handlers.weekly_roundup import run_weekly_roundup
+from sleeper_discord_bot.handlers.news_feed import run_news_feed
 
 
 def build_sleeper(config: AppConfig) -> SleeperClient:
@@ -31,6 +33,7 @@ def main() -> int:
     parser.add_argument("--season", help="NFL season. Defaults to SEASON or Sleeper state.")
     parser.add_argument("--base-url", help="Sleeper API base URL.")
     parser.add_argument("--stats-base-url", help="Sleeper stats API base URL.")
+    parser.add_argument("--rss-feed-url", help="RSS/Atom URL. Defaults to RSS_FEED_URL.")
 
     subparsers = parser.add_subparsers(dest="command", required=True)
     weekly_parser = subparsers.add_parser("weekly", help="Run Weekly Roundup locally.")
@@ -40,6 +43,8 @@ def main() -> int:
     trades_parser = subparsers.add_parser("trades", help="Run Trade Watch locally.")
     trades_parser.add_argument("--week", type=int)
 
+    subparsers.add_parser("news", help="Run the RSS news feed locally.")
+
     args = parser.parse_args()
     env_config = AppConfig.from_env()
     config = AppConfig(
@@ -47,17 +52,18 @@ def main() -> int:
         season=args.season or env_config.season,
         sleeper_base_url=args.base_url or env_config.sleeper_base_url,
         sleeper_stats_base_url=args.stats_base_url or env_config.sleeper_stats_base_url,
+        rss_feed_url=args.rss_feed_url or env_config.rss_feed_url,
         dry_run=True,
         discord_bot_token=env_config.discord_bot_token,
         channel_ids=env_config.channel_ids,
     )
 
-    sleeper = build_sleeper(config)
     storage = InMemoryStorage()
     delivery = ConsoleDelivery()
-    league_id = config.require_league_id()
 
     if args.command == "weekly":
+        sleeper = build_sleeper(config)
+        league_id = config.require_league_id()
         result = run_weekly_roundup(
             sleeper=sleeper,
             storage=storage,
@@ -68,12 +74,21 @@ def main() -> int:
             send_message=delivery.send,
         )
     elif args.command == "trades":
+        sleeper = build_sleeper(config)
+        league_id = config.require_league_id()
         result = run_trade_watch(
             sleeper=sleeper,
             storage=storage,
             league_id=league_id,
             season=config.season,
             week=args.week,
+            send_message=delivery.send,
+        )
+    elif args.command == "news":
+        result = run_news_feed(
+            rss=RssClient(),
+            storage=storage,
+            feed_url=config.rss_feed_url,
             send_message=delivery.send,
         )
     else:

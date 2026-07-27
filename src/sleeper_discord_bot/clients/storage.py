@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from decimal import Decimal
 from datetime import datetime, timezone
 from typing import Any, Protocol
 
@@ -88,6 +89,95 @@ class InMemoryStorage:
             "data": deepcopy(data),
             "fetched_at": fetched_at or utc_now_iso(),
         }
+
+    def get_players_cache(self) -> dict[str, Any] | None:
+        return self.get("PLAYERS_CACHE", "latest")
+
+
+def _to_dynamodb(value: Any) -> Any:
+    if isinstance(value, float):
+        return Decimal(str(value))
+    if isinstance(value, dict):
+        return {key: _to_dynamodb(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_to_dynamodb(item) for item in value]
+    return value
+
+
+def _from_dynamodb(value: Any) -> Any:
+    if isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, dict):
+        return {key: _from_dynamodb(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_from_dynamodb(item) for item in value]
+    return value
+
+
+class DynamoDBStorage:
+    """DynamoDB implementation used by deployed Lambda handlers."""
+
+    def __init__(self, table_name: str, table: Any | None = None) -> None:
+        if not table_name:
+            raise ValueError("DYNAMODB_TABLE_NAME is required.")
+        if table is None:
+            import boto3
+
+            table = boto3.resource("dynamodb").Table(table_name)
+        self.table = table
+
+    def put_if_absent(self, pk: str, sk: str, attributes: dict[str, Any] | None = None) -> bool:
+        item = {"pk": pk, "sk": sk}
+        item.update(attributes or {})
+        try:
+            self.table.put_item(
+                Item=_to_dynamodb(item),
+                ConditionExpression="attribute_not_exists(pk) AND attribute_not_exists(sk)",
+            )
+        except Exception as exc:
+            error_code = getattr(exc, "response", {}).get("Error", {}).get("Code")
+            if error_code == "ConditionalCheckFailedException":
+                return False
+            raise
+        return True
+
+    def exists(self, pk: str, sk: str) -> bool:
+        return self.get(pk, sk) is not None
+
+    def get(self, pk: str, sk: str) -> dict[str, Any] | None:
+        response = self.table.get_item(Key={"pk": pk, "sk": sk})
+        item = response.get("Item")
+        return _from_dynamodb(item) if item else None
+
+    def put_snapshot(self, item: dict[str, Any]) -> None:
+        if not item.get("pk") or not item.get("sk"):
+            raise ValueError("Snapshot item must include pk and sk.")
+        self.table.put_item(Item=_to_dynamodb(item))
+
+    def mark_weekly_flag(self, season: str, week: int, flag: str) -> None:
+        pk, sk = weekly_key(season, week)
+        self.table.update_item(
+            Key={"pk": pk, "sk": sk},
+            UpdateExpression="SET #flag = :value, updated_at = :updated_at",
+            ExpressionAttributeNames={"#flag": flag},
+            ExpressionAttributeValues={":value": True, ":updated_at": utc_now_iso()},
+        )
+
+    def get_weekly_flags(self, season: str, week: int) -> dict[str, Any]:
+        pk, sk = weekly_key(season, week)
+        return self.get(pk, sk) or {"pk": pk, "sk": sk}
+
+    def set_players_cache(self, data: Any, fetched_at: str | None = None) -> None:
+        self.table.put_item(
+            Item=_to_dynamodb(
+                {
+                    "pk": "PLAYERS_CACHE",
+                    "sk": "latest",
+                    "data": data,
+                    "fetched_at": fetched_at or utc_now_iso(),
+                }
+            )
+        )
 
     def get_players_cache(self) -> dict[str, Any] | None:
         return self.get("PLAYERS_CACHE", "latest")
