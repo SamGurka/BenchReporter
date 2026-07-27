@@ -2,7 +2,7 @@
 
 A serverless Discord bot for a Sleeper fantasy football league.
 
-The project is in early implementation. The working technical spec lives in [`sleeper-discord-bot-spec.md`](./sleeper-discord-bot-spec.md).
+The project is in early implementation.
 
 ## Motivation
 
@@ -73,11 +73,10 @@ Run tests:
 python -m pytest
 ```
 
-Install dependencies and the project in editable mode first if module imports fail:
+Install the project and its development dependencies:
 
 ```bash
-python -m pip install -r requirements.txt
-python -m pip install -e .
+python -m pip install -e ".[dev]"
 ```
 
 Preview sample Discord-style messages:
@@ -92,6 +91,7 @@ Run the local app path with console output:
 ```bash
 python -m sleeper_discord_bot.local_app --league-id <league_id> --season 2025 weekly --week 16
 python -m sleeper_discord_bot.local_app --league-id <league_id> --season 2025 trades --week 1
+python -m sleeper_discord_bot.local_app --rss-feed-url "https://www.rotowire.com/rss/news.php?sport=NFL" news
 ```
 
 ## Deployment
@@ -107,8 +107,8 @@ infra/
 Expected deployment flow:
 
 ```bash
-sam build
-sam deploy --guided
+sam build --template-file infra\template.yaml
+sam deploy --config-file infra\samconfig.toml
 ```
 
 ## Legal

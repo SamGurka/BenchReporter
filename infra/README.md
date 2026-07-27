@@ -17,7 +17,7 @@ Copy the tracked example to your ignored local configuration file, then choose a
 Copy-Item infra\samconfig.example.toml infra\samconfig.toml
 ```
 
-Deploy the base stack:
+Build a deployable Lambda artifact from `pyproject.toml`, then deploy:
 
 ```powershell
 sam build --template-file infra\template.yaml
@@ -32,8 +32,6 @@ The RSS deployment will read these values from SSM Parameter Store rather than s
 
 ```text
 /benchreporter/dev/discord-bot-token
-/benchreporter/dev/sleeper-league-id
-/benchreporter/dev/rss-feed-url
 /benchreporter/dev/discord-channel-espn-news-feed
 ```
 
