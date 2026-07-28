@@ -55,6 +55,7 @@ Resources:
         Variables:
           DYNAMODB_TABLE_NAME: !Ref BotStateTable
           DRY_RUN: "false"
+          PYTHONPATH: /var/task/src
           RSS_FEED_URL: !Ref RssFeedUrl
           SSM_PARAMETER_PREFIX: !Sub "/benchreporter/${Environment}"
       Policies:

@@ -9,3 +9,4 @@ region = "us-east-1"
 confirm_changeset = true
 resolve_s3 = true
 parameter_overrides = "Environment=dev RssFeedUrl=https://www.rotowire.com/rss/news.php?sport=NFL"
+capabilities = "CAPABILITY_IAM"
