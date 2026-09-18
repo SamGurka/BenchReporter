@@ -6,7 +6,7 @@ from typing import Any
 
 from sleeper_discord_bot.domain.players import format_player
 from sleeper_discord_bot.domain.team_names import roster_display_names
-from sleeper_discord_bot.domain.trades import trade_pick_moves, trade_player_moves, trade_roster_ids
+from sleeper_discord_bot.domain.trades import trade_faab_moves, trade_pick_moves, trade_player_moves, trade_roster_ids
 from sleeper_discord_bot.domain.weekly_roundup import bench_player_ids, pair_matchups
 
 
@@ -102,6 +102,7 @@ def build_trade_snapshot(
     roster_ids = trade_roster_ids(transaction)
     player_moves = trade_player_moves(transaction)
     pick_moves = trade_pick_moves(transaction)
+    faab_moves = trade_faab_moves(transaction)
 
     sides = {}
     for roster_id in roster_ids:
@@ -115,6 +116,7 @@ def build_trade_snapshot(
             "received_players": [format_player(player_id, players_by_id) for player_id in received_player_ids],
             "sent_players": [format_player(player_id, players_by_id) for player_id in sent_player_ids],
             "received_picks": pick_moves.get(roster_id, []),
+            "received_faab": faab_moves.get(roster_id, []),
         }
 
     return {
@@ -128,4 +130,79 @@ def build_trade_snapshot(
         "status": transaction.get("status"),
         "status_updated": transaction.get("status_updated"),
         "sides": sides,
+    }
+
+
+def build_draft_pick_snapshots(
+    season: str,
+    draft: dict[str, Any],
+    picks: list[dict[str, Any]],
+    players_by_id: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Preserve completed draft selections for future value and reach analysis."""
+
+    draft_id = str(draft["draft_id"])
+    snapshots = []
+    for pick in picks:
+        pick_no = int(pick.get("pick_no") or 0)
+        if not pick_no:
+            continue
+        player_id = str(pick.get("player_id") or "")
+        snapshots.append(
+            {
+                "pk": f"DRAFT#{draft_id}",
+                "sk": f"PICK#{pick_no:03d}",
+                "season": season,
+                "draft_id": draft_id,
+                "draft_type": draft.get("type"),
+                "pick_no": pick_no,
+                "round": pick.get("round"),
+                "roster_id": pick.get("roster_id"),
+                "picked_by": pick.get("picked_by"),
+                "player_id": player_id or None,
+                "player": format_player(player_id, players_by_id) if player_id else None,
+                "is_keeper": bool(pick.get("is_keeper")),
+                "auction_amount": (pick.get("metadata") or {}).get("amount"),
+            }
+        )
+    return snapshots
+
+
+def build_roster_move_snapshot(
+    season: str,
+    week: int,
+    transaction: dict[str, Any],
+    rosters: list[dict[str, Any]],
+    users: list[dict[str, Any]],
+    players_by_id: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Preserve completed waiver and free-agent moves without announcing them."""
+
+    names_by_roster = roster_display_names(rosters, users)
+    moves: dict[int, dict[str, list[str]]] = {}
+    for player_id, roster_id in (transaction.get("adds") or {}).items():
+        moves.setdefault(int(roster_id), {"adds": [], "drops": []})["adds"].append(str(player_id))
+    for player_id, roster_id in (transaction.get("drops") or {}).items():
+        moves.setdefault(int(roster_id), {"adds": [], "drops": []})["drops"].append(str(player_id))
+
+    return {
+        "pk": f"MOVE#{transaction['transaction_id']}",
+        "sk": "META",
+        "season": season,
+        "week": week,
+        "transaction_id": transaction["transaction_id"],
+        "transaction_type": transaction.get("type"),
+        "created": transaction.get("created"),
+        "status_updated": transaction.get("status_updated"),
+        "faab": trade_faab_moves(transaction),
+        "sides": {
+            str(roster_id): {
+                "team_name": names_by_roster.get(roster_id, f"Roster {roster_id}"),
+                "added_player_ids": side["adds"],
+                "dropped_player_ids": side["drops"],
+                "added_players": [format_player(player_id, players_by_id) for player_id in side["adds"]],
+                "dropped_players": [format_player(player_id, players_by_id) for player_id in side["drops"]],
+            }
+            for roster_id, side in sorted(moves.items())
+        },
     }

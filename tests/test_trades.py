@@ -1,4 +1,4 @@
-from sleeper_discord_bot.domain.trades import completed_trades, trade_pick_moves, trade_player_moves, trade_roster_ids
+from sleeper_discord_bot.domain.trades import completed_trades, trade_faab_moves, trade_pick_moves, trade_player_moves, trade_roster_ids
 
 
 def test_filters_completed_trades(week01_transactions):
@@ -26,3 +26,7 @@ def test_parses_trade_draft_picks(week01_transactions):
         2: ["2027 round 2"],
         5: ["2027 round 3"],
     }
+
+
+def test_parses_trade_faab():
+    assert trade_faab_moves({"waiver_budget": [{"receiver_id": 2, "amount": 15}]}) == {2: ["$15 FAAB"]}

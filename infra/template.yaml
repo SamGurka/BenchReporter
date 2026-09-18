@@ -105,6 +105,255 @@ Resources:
       Principal: scheduler.amazonaws.com
       SourceArn: !GetAtt RssFeedSchedule.Arn
 
+  FreeAgentsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../
+      Handler: sleeper_discord_bot.handlers.free_agents.lambda_handler
+      Runtime: python3.12
+      Architectures:
+        - arm64
+      MemorySize: 256
+      Timeout: 60
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref BotStateTable
+          DRY_RUN: "false"
+          PYTHONPATH: /var/task/src
+          SSM_PARAMETER_PREFIX: !Sub "/benchreporter/${Environment}"
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BotStateTable
+        - Statement:
+            - Effect: Allow
+              Action: ssm:GetParameters
+              Resource: !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/benchreporter/${Environment}/*"
+
+  FreeAgentsScheduleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeFreeAgentsFunction
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt FreeAgentsFunction.Arn
+
+  FreeAgentsSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Description: Post the completed-week standout free-agent report every Tuesday morning.
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      ScheduleExpression: cron(0 9 ? * TUE *)
+      ScheduleExpressionTimezone: America/Chicago
+      State: ENABLED
+      Target:
+        Arn: !GetAtt FreeAgentsFunction.Arn
+        RoleArn: !GetAtt FreeAgentsScheduleRole.Arn
+
+  FreeAgentsSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref FreeAgentsFunction
+      Principal: scheduler.amazonaws.com
+      SourceArn: !GetAtt FreeAgentsSchedule.Arn
+
+  WeeklyRoundupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../
+      Handler: sleeper_discord_bot.handlers.weekly_roundup.lambda_handler
+      Runtime: python3.12
+      Architectures: [arm64]
+      MemorySize: 512
+      Timeout: 90
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref BotStateTable
+          DRY_RUN: "false"
+          PYTHONPATH: /var/task/src
+          SSM_PARAMETER_PREFIX: !Sub "/benchreporter/${Environment}"
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BotStateTable
+        - Statement:
+            - Effect: Allow
+              Action: ssm:GetParameters
+              Resource: !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/benchreporter/${Environment}/*"
+
+  WeeklyRoundupScheduleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: scheduler.amazonaws.com}
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeWeeklyRoundupFunction
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt WeeklyRoundupFunction.Arn
+
+  WeeklyRoundupSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Description: Post the completed-week league roundup every Tuesday morning.
+      FlexibleTimeWindow: {Mode: "OFF"}
+      ScheduleExpression: cron(0 8 ? * TUE *)
+      ScheduleExpressionTimezone: America/Chicago
+      State: ENABLED
+      Target:
+        Arn: !GetAtt WeeklyRoundupFunction.Arn
+        RoleArn: !GetAtt WeeklyRoundupScheduleRole.Arn
+
+  WeeklyRoundupSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WeeklyRoundupFunction
+      Principal: scheduler.amazonaws.com
+      SourceArn: !GetAtt WeeklyRoundupSchedule.Arn
+
+  TradeWatchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../
+      Handler: sleeper_discord_bot.handlers.trade_watch.lambda_handler
+      Runtime: python3.12
+      Architectures: [arm64]
+      MemorySize: 256
+      Timeout: 60
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref BotStateTable
+          DRY_RUN: "false"
+          PYTHONPATH: /var/task/src
+          SSM_PARAMETER_PREFIX: !Sub "/benchreporter/${Environment}"
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BotStateTable
+        - Statement:
+            - Effect: Allow
+              Action: ssm:GetParameters
+              Resource: !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/benchreporter/${Environment}/*"
+
+  TradeWatchScheduleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: scheduler.amazonaws.com}
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeTradeWatchFunction
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt TradeWatchFunction.Arn
+
+  TradeWatchSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Description: Poll completed Sleeper trades; the handler skips preseason, postseason, and offseason.
+      FlexibleTimeWindow: {Mode: "OFF"}
+      ScheduleExpression: rate(15 minutes)
+      State: ENABLED
+      Target:
+        Arn: !GetAtt TradeWatchFunction.Arn
+        RoleArn: !GetAtt TradeWatchScheduleRole.Arn
+
+  TradeWatchSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref TradeWatchFunction
+      Principal: scheduler.amazonaws.com
+      SourceArn: !GetAtt TradeWatchSchedule.Arn
+
+  RssFeedFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: BenchReporter RSS news-feed Lambda failed at least once in five minutes.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref RssFeedFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  FreeAgentsFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: BenchReporter free-agent Lambda failed at least once in five minutes.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref FreeAgentsFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  WeeklyRoundupFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: BenchReporter weekly-roundup Lambda failed at least once in five minutes.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref WeeklyRoundupFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  TradeWatchFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: BenchReporter trade-watch Lambda failed at least once in five minutes.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref TradeWatchFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
 Outputs:
   BotStateTableName:
     Description: DynamoDB table used for dedupe records, cache data, and historical snapshots.
@@ -117,3 +366,15 @@ Outputs:
   RssFeedFunctionName:
     Description: Lambda function that posts the configured RSS/Atom feed to Discord.
     Value: !Ref RssFeedFunction
+
+  FreeAgentsFunctionName:
+    Description: Lambda function that posts the weekly standout free-agent report.
+    Value: !Ref FreeAgentsFunction
+
+  WeeklyRoundupFunctionName:
+    Description: Lambda function that posts completed-week league roundups.
+    Value: !Ref WeeklyRoundupFunction
+
+  TradeWatchFunctionName:
+    Description: Lambda function that posts completed trades during the regular season.
+    Value: !Ref TradeWatchFunction

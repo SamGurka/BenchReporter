@@ -7,6 +7,7 @@ from typing import Any
 from sleeper_discord_bot.domain.players import format_player
 from sleeper_discord_bot.domain.team_names import roster_display_names
 from sleeper_discord_bot.domain.weekly_roundup import (
+    has_player_points,
     letdown_starters,
     pair_matchups,
     standout_starters,
@@ -75,7 +76,10 @@ def format_weekly_roundup_message(
         ]
     )
 
-    standouts = standout_starters(matchups, players_by_id)
+    # Sleeper can omit or partially populate player-level scoring. The core
+    # scoreboard remains useful, so omit only player-dependent sections.
+    player_points_available = has_player_points(matchups)
+    standouts = standout_starters(matchups, players_by_id) if player_points_available else []
     if standouts:
         lines.extend(["", "**Standout Starters**"])
         for standout in standouts:
@@ -86,7 +90,7 @@ def format_weekly_roundup_message(
                 f"({format_points(standout['margin'])} over {standout['position']} starter avg)"
             )
 
-    letdowns = letdown_starters(matchups, prior_matchups_by_week)
+    letdowns = letdown_starters(matchups, prior_matchups_by_week) if player_points_available else []
     if letdowns:
         lines.extend(["", "**Letdowns**"])
         for letdown in letdowns:

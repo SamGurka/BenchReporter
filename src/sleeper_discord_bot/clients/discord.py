@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import Any, Callable, Protocol
 
@@ -47,7 +48,7 @@ class DiscordClient:
         self.base_url = base_url.rstrip("/")
         self.timeout_sec = timeout_sec
         self.session = session or requests
-        self.sleep = sleep
+        self.sleep = sleep or time.sleep
 
     def send_message(self, channel_id: str, content: str) -> DiscordSendResult:
         if len(content) > DISCORD_MESSAGE_LIMIT:
@@ -63,7 +64,7 @@ class DiscordClient:
         response = self._post_message(channel_id, content)
         if response.status_code == 429:
             retry_after = self._retry_after_seconds(response)
-            if self.sleep is not None and retry_after > 0:
+            if retry_after > 0:
                 self.sleep(retry_after)
             response = self._post_message(channel_id, content)
 

@@ -20,6 +20,7 @@ The weekly recap style is inspired by old Madden Franchise newspaper screens: qu
 | Trade Watch | Announces completed Sleeper trades | `#trade-block` |
 | Weekly Roundup | Posts matchup results, weekly high/low teams, standout starters, and letdowns | `#last-week-tldr` |
 | Standout Free Agents | Highlights notable available QB/RB/WR/TE options after each week | `#standout-free-agents` |
+| Season Awards | Posts raw-data trade, draft, waiver, lineup, and schedule award candidates | configurable |
 
 ## Architecture
 
@@ -91,6 +92,8 @@ Run the local app path with console output:
 ```bash
 python -m sleeper_discord_bot.local_app --league-id <league_id> --season 2025 weekly --week 16
 python -m sleeper_discord_bot.local_app --league-id <league_id> --season 2025 trades --week 1
+python -m sleeper_discord_bot.local_app --league-id <league_id> --season 2025 free-agents --week 16
+python -m sleeper_discord_bot.local_app --league-id <league_id> --season 2025 season-awards --week 18
 python -m sleeper_discord_bot.local_app --rss-feed-url "https://www.rotowire.com/rss/news.php?sport=NFL" news
 ```
 
@@ -135,7 +138,6 @@ sam deploy --config-file infra\samconfig.toml
 - Waiver and bench awards
 - Start/sit and schedule awards
 - Early QB/TE draft reach award
-- Injury Opportunity free-agent label
 
 ### Backburner
 

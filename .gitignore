@@ -14,5 +14,5 @@ src/*.egg-info/
 .aws-sam/
 samconfig.toml
 
-scripts/
+sleeper_utils/
 tests/private/

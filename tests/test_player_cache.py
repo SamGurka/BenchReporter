@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 from sleeper_discord_bot.clients.storage import InMemoryStorage
 from sleeper_discord_bot.domain.players import cached_player_lookup, player_lookup_from_directory
 
@@ -48,3 +50,15 @@ def test_cached_player_lookup_fetches_once():
 
     assert first == second
     assert sleeper.calls == 1
+
+
+def test_cached_player_lookup_refreshes_after_24_hours():
+    storage = InMemoryStorage()
+    sleeper = FakeSleeper()
+    now = datetime(2025, 9, 1, tzinfo=timezone.utc)
+
+    cached_player_lookup(storage, sleeper, now=now)
+    cached_player_lookup(storage, sleeper, now=now + timedelta(hours=23, minutes=59))
+    cached_player_lookup(storage, sleeper, now=now + timedelta(hours=24))
+
+    assert sleeper.calls == 2

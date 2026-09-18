@@ -60,3 +60,20 @@ def test_weekly_roundup_message_includes_standouts_and_letdowns(week16_matchups)
     assert "**Letdowns**" in message
     assert "Player " not in message
     assert len(message) < 2000
+
+
+def test_weekly_roundup_keeps_scoreboard_when_player_points_are_missing(week01_matchups):
+    matchups = [{key: value for key, value in matchup.items() if key != "players_points"} for matchup in week01_matchups]
+
+    message = format_weekly_roundup_message(
+        week=1,
+        matchups=matchups,
+        rosters=load_sample("rosters.json"),
+        users=load_sample("users.json"),
+        players_by_id={},
+    )
+
+    assert "**Scoreboard**" in message
+    assert "**High / Low**" in message
+    assert "**Standout Starters**" not in message
+    assert "**Letdowns**" not in message

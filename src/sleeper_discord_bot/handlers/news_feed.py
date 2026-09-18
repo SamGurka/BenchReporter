@@ -15,6 +15,7 @@ from sleeper_discord_bot.domain.news import NewsItem
 from sleeper_discord_bot.handlers.results import HandlerResult
 from sleeper_discord_bot.messages.bot_message import BotMessage
 from sleeper_discord_bot.messages.news import format_news_message
+from sleeper_discord_bot.observability import log_job_result
 
 
 RSS_DEDUPE_TTL_DAYS = 120
@@ -69,7 +70,7 @@ def run_news_feed(
     posted_count = 0
     skipped_count = len(seen_only)
     for item in post_candidates:
-        if storage.exists("RSS", item.item_id):
+        if not storage.put_if_absent("RSS", item.item_id, _dedupe_attributes(item)):
             skipped_count += 1
             continue
 
@@ -79,8 +80,11 @@ def run_news_feed(
             title=item.title,
             content=format_news_message(item),
         )
-        send_message(message)
-        storage.put_if_absent("RSS", item.item_id, _dedupe_attributes(item))
+        try:
+            send_message(message)
+        except Exception:
+            storage.delete("RSS", item.item_id)
+            raise
         messages.append(message)
         posted_count += 1
 
@@ -127,4 +131,5 @@ def lambda_handler(event: object, context: object) -> dict[str, int]:
         feed_url=config.rss_feed_url,
         send_message=delivery.send,
     )
+    log_job_result(job="news_feed", season=config.season, dry_run=config.dry_run, result=result)
     return {"posted": result.posted_count, "skipped": result.skipped_count}

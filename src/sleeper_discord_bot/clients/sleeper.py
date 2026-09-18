@@ -57,3 +57,11 @@ class SleeperClient:
 
     def weekly_stats(self, season: str, week: int) -> Any:
         return self._get_stats(f"/{season}/{week}?season_type=regular")
+
+    def weekly_projections(self, season: str, week: int) -> Any:
+        response = requests.get(
+            f"{self.stats_base_url.replace('/stats/nfl', '/projections/nfl')}/{season}/{week}?season_type=regular",
+            timeout=self.timeout_sec,
+        )
+        response.raise_for_status()
+        return response.json()

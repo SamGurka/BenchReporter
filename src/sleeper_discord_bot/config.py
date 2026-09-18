@@ -40,6 +40,7 @@ class AppConfig:
                 "standout_free_agents": env.get("DISCORD_CHANNEL_STANDOUT_FREE_AGENTS", ""),
                 "last_week_tldr": env.get("DISCORD_CHANNEL_LAST_WEEK_TLDR", ""),
                 "trade_block": env.get("DISCORD_CHANNEL_TRADE_BLOCK", ""),
+                "season_awards": env.get("DISCORD_CHANNEL_SEASON_AWARDS", ""),
             },
         )
 

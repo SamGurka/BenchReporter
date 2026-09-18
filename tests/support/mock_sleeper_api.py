@@ -86,6 +86,12 @@ def create_mock_sleeper_app(data_dir: Path = DEFAULT_DATA_DIR) -> FastAPI:
             raise HTTPException(status_code=404, detail="Only regular-season mock stats exist.")
         return load_json(data_dir / "weeks" / f"{week:02d}" / "stats.json")
 
+    @app.get("/projections/nfl/{season}/{week}")
+    def weekly_projections(season: str, week: int, season_type: str = "regular") -> Any:
+        if season_type != "regular":
+            raise HTTPException(status_code=404, detail="Only regular-season mock projections exist.")
+        return load_json(data_dir / "weeks" / f"{week:02d}" / "stats.json")
+
     return app
 
 
