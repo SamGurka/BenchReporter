@@ -17,6 +17,46 @@ STANDARD_SCORING = {
     "fum_lost": -2.0,
 }
 
+# These settings affect kickers, team defenses, or IDP players.  They do not
+# change Sleeper's QB/RB/WR/TE ``pts_*`` fields, so they must not make a league
+# ineligible for the generic free-agent report.
+SPECIALIST_SCORING_PREFIXES = (
+    "def_",
+    "idp_",
+    "fg",
+    "xp",
+    "pts_allow",
+    "yds_allow",
+    "kr_",
+    "pr_",
+    "st_",
+    "blk_",
+)
+SPECIALIST_SCORING_KEYS = {
+    "int",
+    "sack",
+    "sack_yd",
+    "qb_hit",
+    "ff",
+    "safe",
+    "tkl",
+    "tkl_ast",
+    "tkl_loss",
+    "tkl_solo",
+    "fum_rec",
+    "fum_rec_td",
+    "fum_ret_yd",
+    "bonus_def_fum_td_50p",
+    "bonus_def_int_td_50p",
+    "bonus_sack_2p",
+    "bonus_tkl_10p",
+}
+STANDARD_OPTIONAL_OFFENSIVE_SCORING = {
+    "pass_2pt": 2.0,
+    "rush_2pt": 2.0,
+    "rec_2pt": 2.0,
+}
+
 
 @dataclass(frozen=True)
 class ScoringProfile:
@@ -30,6 +70,10 @@ def _number(value: Any) -> float:
     if value is None:
         return 0.0
     return float(value)
+
+
+def _is_specialist_scoring_key(key: str) -> bool:
+    return key in SPECIALIST_SCORING_KEYS or key.startswith(SPECIALIST_SCORING_PREFIXES)
 
 
 def detect_scoring_profile(scoring_settings: dict[str, Any]) -> ScoringProfile:
@@ -50,17 +94,26 @@ def detect_scoring_profile(scoring_settings: dict[str, Any]) -> ScoringProfile:
     if rec not in {0.0, 0.5, 1.0}:
         custom_keys.append("rec")
 
-    ignored_keys = set(STANDARD_SCORING) | {"rec"}
+    optional_custom_keys = [
+        key
+        for key, standard_value in STANDARD_OPTIONAL_OFFENSIVE_SCORING.items()
+        if key in scoring_settings and _number(scoring_settings[key]) != standard_value
+    ]
+    ignored_keys = set(STANDARD_SCORING) | set(STANDARD_OPTIONAL_OFFENSIVE_SCORING) | {"rec"}
     extra_nonzero = [
         key
         for key, value in scoring_settings.items()
-        if key not in ignored_keys and _number(value) != 0.0
+        if key not in ignored_keys
+        and not _is_specialist_scoring_key(key)
+        and _number(value) != 0.0
     ]
 
-    if custom_keys or extra_nonzero:
+    if custom_keys or optional_custom_keys or extra_nonzero:
         details = []
         if custom_keys:
             details.append(f"non-standard core keys: {', '.join(sorted(custom_keys))}")
+        if optional_custom_keys:
+            details.append(f"non-standard optional keys: {', '.join(sorted(optional_custom_keys))}")
         if extra_nonzero:
             details.append(f"extra scoring keys: {', '.join(sorted(extra_nonzero)[:8])}")
         return ScoringProfile(
@@ -75,4 +128,3 @@ def detect_scoring_profile(scoring_settings: dict[str, Any]) -> ScoringProfile:
     if rec == 0.5:
         return ScoringProfile("half_ppr", "pts_half_ppr", True)
     return ScoringProfile("standard", "pts_std", True)
-

@@ -12,6 +12,8 @@ from sleeper_discord_bot.delivery import ConsoleDelivery
 from sleeper_discord_bot.handlers.trade_watch import run_trade_watch
 from sleeper_discord_bot.handlers.weekly_roundup import run_weekly_roundup
 from sleeper_discord_bot.handlers.news_feed import run_news_feed
+from sleeper_discord_bot.handlers.free_agents import run_free_agents
+from sleeper_discord_bot.handlers.season_awards import run_season_awards
 
 
 def build_sleeper(config: AppConfig) -> SleeperClient:
@@ -42,6 +44,13 @@ def main() -> int:
 
     trades_parser = subparsers.add_parser("trades", help="Run Trade Watch locally.")
     trades_parser.add_argument("--week", type=int)
+
+    free_agents_parser = subparsers.add_parser("free-agents", help="Run Standout Free Agents locally.")
+    free_agents_parser.add_argument("--week", type=int)
+    free_agents_parser.add_argument("--prior-weeks", help="Comma-separated weeks used for production context.")
+
+    awards_parser = subparsers.add_parser("season-awards", help="Run objective season awards locally.")
+    awards_parser.add_argument("--week", type=int, help="Last completed regular-season week to include.")
 
     subparsers.add_parser("news", help="Run the RSS news feed locally.")
 
@@ -84,12 +93,30 @@ def main() -> int:
             week=args.week,
             send_message=delivery.send,
         )
+    elif args.command == "free-agents":
+        sleeper = build_sleeper(config)
+        league_id = config.require_league_id()
+        result = run_free_agents(
+            sleeper=sleeper,
+            storage=storage,
+            league_id=league_id,
+            season=config.season,
+            week=args.week,
+            prior_weeks=_parse_prior_weeks(args.prior_weeks),
+            send_message=delivery.send,
+        )
     elif args.command == "news":
         result = run_news_feed(
             rss=RssClient(),
             storage=storage,
             feed_url=config.rss_feed_url,
             send_message=delivery.send,
+        )
+    elif args.command == "season-awards":
+        sleeper = build_sleeper(config)
+        result = run_season_awards(
+            sleeper=sleeper, storage=storage, league_id=config.require_league_id(), season=config.season,
+            week=args.week, send_message=delivery.send,
         )
     else:
         parser.error(f"Unknown command: {args.command}")

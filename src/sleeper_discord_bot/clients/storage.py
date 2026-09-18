@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from decimal import Decimal
 from datetime import datetime, timezone
+import json
 from typing import Any, Protocol
 
 
@@ -14,6 +15,9 @@ class Storage(Protocol):
 
     def exists(self, pk: str, sk: str) -> bool:
         """Return whether an item exists."""
+
+    def delete(self, pk: str, sk: str) -> None:
+        """Delete a reservation after a delivery failure."""
 
     def get(self, pk: str, sk: str) -> dict[str, Any] | None:
         """Return an item by key."""
@@ -60,6 +64,9 @@ class InMemoryStorage:
 
     def exists(self, pk: str, sk: str) -> bool:
         return (pk, sk) in self._items
+
+    def delete(self, pk: str, sk: str) -> None:
+        self._items.pop((pk, sk), None)
 
     def get(self, pk: str, sk: str) -> dict[str, Any] | None:
         item = self._items.get((pk, sk))
@@ -144,6 +151,9 @@ class DynamoDBStorage:
     def exists(self, pk: str, sk: str) -> bool:
         return self.get(pk, sk) is not None
 
+    def delete(self, pk: str, sk: str) -> None:
+        self.table.delete_item(Key={"pk": pk, "sk": sk})
+
     def get(self, pk: str, sk: str) -> dict[str, Any] | None:
         response = self.table.get_item(Key={"pk": pk, "sk": sk})
         item = response.get("Item")
@@ -168,16 +178,68 @@ class DynamoDBStorage:
         return self.get(pk, sk) or {"pk": pk, "sk": sk}
 
     def set_players_cache(self, data: Any, fetched_at: str | None = None) -> None:
-        self.table.put_item(
-            Item=_to_dynamodb(
-                {
-                    "pk": "PLAYERS_CACHE",
-                    "sk": "latest",
-                    "data": data,
-                    "fetched_at": fetched_at or utc_now_iso(),
-                }
+        """Store the large Sleeper directory in DynamoDB-safe map chunks.
+
+        DynamoDB caps one item at 400 KB.  A full NFL player directory is much
+        larger, so only the small metadata record uses ``latest``; data lives
+        in stable numbered parts.
+        """
+
+        if not isinstance(data, dict):
+            raise ValueError("Player cache data must be a dictionary.")
+        chunks = _players_cache_chunks(data)
+        for index, chunk in enumerate(chunks):
+            self.table.put_item(
+                Item=_to_dynamodb(
+                    {
+                        "pk": "PLAYERS_CACHE",
+                        "sk": f"part#{index:04d}",
+                        "data": chunk,
+                    }
+                )
             )
+        self.table.put_item(
+            Item={
+                "pk": "PLAYERS_CACHE",
+                "sk": "latest",
+                "fetched_at": fetched_at or utc_now_iso(),
+                "chunk_count": len(chunks),
+            }
         )
 
     def get_players_cache(self) -> dict[str, Any] | None:
-        return self.get("PLAYERS_CACHE", "latest")
+        metadata = self.get("PLAYERS_CACHE", "latest")
+        if not metadata:
+            return None
+        # Supports the pre-chunking record shape during a rolling deployment.
+        if isinstance(metadata.get("data"), dict):
+            return metadata
+        chunk_count = metadata.get("chunk_count")
+        if not isinstance(chunk_count, (int, float)) or int(chunk_count) < 1:
+            return None
+        data: dict[str, Any] = {}
+        for index in range(int(chunk_count)):
+            chunk = self.get("PLAYERS_CACHE", f"part#{index:04d}")
+            if not chunk or not isinstance(chunk.get("data"), dict):
+                return None
+            data.update(chunk["data"])
+        return {**metadata, "data": data}
+
+
+PLAYERS_CACHE_CHUNK_BYTES = 250_000
+
+
+def _players_cache_chunks(data: dict[str, Any]) -> list[dict[str, Any]]:
+    chunks: list[dict[str, Any]] = []
+    chunk: dict[str, Any] = {}
+    chunk_size = 2
+    for player_id, player in data.items():
+        encoded_size = len(json.dumps({player_id: player}, separators=(",", ":"), default=str).encode("utf-8"))
+        if chunk and chunk_size + encoded_size > PLAYERS_CACHE_CHUNK_BYTES:
+            chunks.append(chunk)
+            chunk, chunk_size = {}, 2
+        chunk[player_id] = player
+        chunk_size += encoded_size
+    if chunk:
+        chunks.append(chunk)
+    return chunks or [{}]

@@ -6,7 +6,7 @@ from typing import Any
 
 from sleeper_discord_bot.domain.players import format_player
 from sleeper_discord_bot.domain.team_names import roster_display_names
-from sleeper_discord_bot.domain.trades import trade_pick_moves, trade_player_moves, trade_roster_ids
+from sleeper_discord_bot.domain.trades import trade_faab_moves, trade_pick_moves, trade_player_moves, trade_roster_ids
 
 
 def _format_assets(items: list[str]) -> str:
@@ -25,6 +25,7 @@ def format_trade_message(
     roster_ids = trade_roster_ids(transaction)
     player_moves = trade_player_moves(transaction)
     pick_moves = trade_pick_moves(transaction)
+    faab_moves = trade_faab_moves(transaction)
 
     header_names = [names_by_roster.get(roster_id, f"Roster {roster_id}") for roster_id in roster_ids]
     lines = [f"**Trade Alert: {' <-> '.join(header_names)}**"]
@@ -36,7 +37,7 @@ def format_trade_message(
             for player_id in player_moves.get(roster_id, {}).get("adds", [])
         ]
         picks_received = pick_moves.get(roster_id, [])
-        assets = players_received + picks_received
+        assets = players_received + picks_received + faab_moves.get(roster_id, [])
         lines.append(f"- **{team_name} receives:** {_format_assets(assets)}")
 
     return "\n".join(lines)

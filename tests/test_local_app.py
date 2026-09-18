@@ -18,6 +18,9 @@ class LocalAppSleeper:
     def rosters(self, league_id: str) -> list[dict[str, Any]]:
         return self._load("rosters.json")
 
+    def league(self, league_id: str) -> dict[str, Any]:
+        return self._load("league.json")
+
     def users(self, league_id: str) -> list[dict[str, Any]]:
         return self._load("users.json")
 
@@ -30,11 +33,20 @@ class LocalAppSleeper:
     def weekly_stats(self, season: str, week: int) -> Any:
         return self._load(f"weeks/{week:02d}/stats.json")
 
+    def weekly_projections(self, season: str, week: int) -> Any:
+        return self._load(f"weeks/{week:02d}/stats.json")
+
     def players(self) -> dict[str, Any]:
         return {}
 
     def nfl_state(self) -> dict[str, Any]:
         return self._load("state_nfl.json")
+
+    def drafts(self, league_id: str) -> list[dict[str, Any]]:
+        return self._load("drafts/drafts.json")
+
+    def draft_picks(self, draft_id: str) -> list[dict[str, Any]]:
+        return self._load(f"drafts/{draft_id}/picks.json")
 
 
 def test_local_app_runs_weekly_command(monkeypatch, capsys):
@@ -85,3 +97,27 @@ def test_local_app_runs_trades_command(monkeypatch, capsys):
     output = capsys.readouterr().out
     assert "[trade_block] Trade Alert" in output
     assert "Result: posted=" in output
+
+
+def test_local_app_runs_free_agents_command(monkeypatch, capsys):
+    monkeypatch.setattr(local_app, "build_sleeper", lambda config: LocalAppSleeper())
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "local_app",
+            "--league-id",
+            "sample_league",
+            "--season",
+            "2025",
+            "free-agents",
+            "--week",
+            "16",
+        ],
+    )
+
+    assert local_app.main() == 0
+
+    # The sanitized sample is deliberately custom-scored, so this verifies
+    # the command path and its safe production skip behavior.
+    assert "Result: posted=0 skipped=1 snapshots=0" in capsys.readouterr().out

@@ -5,6 +5,7 @@ import pytest
 from sleeper_discord_bot.config import AppConfig
 from sleeper_discord_bot.delivery import ConsoleDelivery, DiscordDelivery
 from sleeper_discord_bot.domain.nfl_state import completed_regular_season_week
+from sleeper_discord_bot.messages.bot_message import split_content
 from sleeper_discord_bot.messages.bot_message import BotMessage
 
 
@@ -85,3 +86,20 @@ def test_completed_regular_season_week_during_regular_season():
 def test_completed_regular_season_week_rejects_preseason():
     with pytest.raises(ValueError):
         completed_regular_season_week({"season": "2025", "season_type": "pre", "week": 1})
+
+
+def test_completed_regular_season_week_rejects_unfinished_week_one():
+    with pytest.raises(ValueError):
+        completed_regular_season_week({"season": "2025", "season_type": "regular", "week": 1})
+
+
+def test_completed_regular_season_week_handles_postseason_and_offseason():
+    assert completed_regular_season_week({"season": "2025", "season_type": "post", "leg": 18}) == ("2025", 18)
+    assert completed_regular_season_week({"previous_season": "2025", "season_type": "off", "leg": 18}) == ("2025", 18)
+
+
+def test_split_content_is_line_safe_and_never_exceeds_discord_limit():
+    chunks = split_content("first\n" + "x" * 2001)
+
+    assert all(len(chunk) <= 2000 for chunk in chunks)
+    assert "first" in chunks[0]

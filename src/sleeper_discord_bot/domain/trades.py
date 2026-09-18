@@ -48,3 +48,18 @@ def trade_pick_moves(transaction: dict[str, Any]) -> dict[int, list[str]]:
         picks.sort()
 
     return moves
+
+
+def trade_faab_moves(transaction: dict[str, Any]) -> dict[int, list[str]]:
+    """Return FAAB received by roster, tolerating Sleeper's transfer shape."""
+
+    moves: dict[int, list[str]] = {}
+    for transfer in transaction.get("waiver_budget") or []:
+        if not isinstance(transfer, dict):
+            continue
+        receiver = transfer.get("receiver_id", transfer.get("receiver"))
+        amount = transfer.get("amount")
+        if receiver is None or amount is None:
+            continue
+        moves.setdefault(int(receiver), []).append(f"${amount} FAAB")
+    return moves

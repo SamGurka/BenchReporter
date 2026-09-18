@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 
 from sleeper_discord_bot.clients.discord import DISCORD_MESSAGE_LIMIT, DiscordClient
+from sleeper_discord_bot.clients import discord as discord_module
 
 
 class FakeResponse:
@@ -94,6 +95,19 @@ def test_send_message_retries_once_after_rate_limit():
     assert result.message_id == "message-2"
     assert len(session.calls) == 2
     assert sleeps == [0.25]
+
+
+def test_send_message_waits_for_rate_limit_retry_in_production(monkeypatch):
+    sleeps: list[float] = []
+    monkeypatch.setattr(discord_module.time, "sleep", sleeps.append)
+    client = DiscordClient(
+        bot_token="token",
+        session=FakeSession([FakeResponse(429, {"retry_after": 0.5}), FakeResponse(200, {"id": "message-3"})]),
+    )
+
+    client.send_message("channel-1", "hello")
+
+    assert sleeps == [0.5]
 
 
 def test_send_message_rejects_content_over_discord_limit():
